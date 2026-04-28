@@ -17,8 +17,9 @@ process.on("unhandledRejection", (reason, promise) => {
 connectDB()
 	.then(async () => {
 		await registerRoutes();
-		const server = app.listen(PORT, () => {
-			console.log(`Backend listening on http://localhost:${PORT}`);
+		const server = app.listen(PORT, "0.0.0.0", () => {
+			console.log(`✅ Backend listening on http://0.0.0.0:${PORT}`);
+			console.log(`📱 Phone access: http://172.80.3.136:${PORT}`);
 		});
 
 		server.on("error", (error) => {

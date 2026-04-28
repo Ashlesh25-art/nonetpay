@@ -4,9 +4,15 @@ import {
   notifyVoucherSynced,
 } from "./notifications";
 
-// ✅ Production backend URL — do NOT use localhost or 192.168.x.x here
-export const API_BASE_URL = "https://offline-pay-backend-sau2.onrender.com";
+// ✅ LOCAL backend via Cloudflare Tunnel — works from phone on any network
+export const API_BASE_URL = "https://explore-criterion-logging-floppy.trycloudflare.com";
 export const BASE_URL = API_BASE_URL;
+
+// 🔧 To get a new tunnel: run .\cloudflared.exe tunnel --url http://localhost:4000
+// 🔧 Fallback: https://offline-pay-backend-sau2.onrender.com
+
+
+
 
 // ─── AsyncStorage keys ────────────────────────────────────────────────────────
 export const STORAGE_KEYS = {
@@ -165,11 +171,13 @@ export type OfflineTransaction = {
   voucherId: string;
   userId: string;
   merchantId: string;
+  merchantName?: string;
   amount: number;
   timestamp: string;
   signature: string;
   publicKeyHex: string;
   status: "pending" | "synced" | "failed";
+  failureReason?: string;
 };
 
 /** Add a new payment to the offline queue (idempotent — ignores duplicates). */
@@ -218,6 +226,7 @@ export async function syncOfflineTransactions(token: string): Promise<number> {
       const vouchers = txns.map((t) => ({
         voucherId: t.voucherId,
         merchantId: t.merchantId,
+        merchantName: t.merchantName,
         amount: t.amount,
         createdAt: t.timestamp,
         issuedTo: t.userId,
@@ -235,6 +244,9 @@ export async function syncOfflineTransactions(token: string): Promise<number> {
         const result = await response.json();
         // syncedNow = user uploaded first (voucher backed up, but merchant hasn't scanned yet)
         const syncedNow = new Set<string>(result.syncedIds || []);
+        const rejectedReasonById = new Map<string, string>(
+          (result.rejected || []).map((r: { reason: string; voucherId: string }) => [r.voucherId, r.reason])
+        );
         // alreadySynced = backend already had this voucher = MERCHANT scanned first = confirmed
         const alreadySynced = new Set<string>(
           (result.rejected || [])
@@ -254,6 +266,7 @@ export async function syncOfflineTransactions(token: string): Promise<number> {
         for (const txn of txns) {
           if (syncedNow.has(txn.voucherId) || alreadySynced.has(txn.voucherId)) {
             txn.status = "synced";
+            delete txn.failureReason;
             didUpdate = true;
             syncedCount++;
 
@@ -293,6 +306,7 @@ export async function syncOfflineTransactions(token: string): Promise<number> {
             // insufficient balance, etc.). It will never sync — mark failed so it
             // leaves the pending queue and stops blocking the banner.
             txn.status = "failed";
+            txn.failureReason = rejectedReasonById.get(txn.voucherId) || "Payment could not be verified";
             didUpdate = true;
           }
         }

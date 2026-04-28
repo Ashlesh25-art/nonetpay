@@ -246,6 +246,7 @@ export default function UserPayScreen() {
           voucherId: payload.voucherId,
           userId: userId!,
           merchantId: merchant.merchantId,
+          merchantName: merchant.name,
           amount: amt,
           timestamp: payload.createdAt,
           signature: signatureHex,

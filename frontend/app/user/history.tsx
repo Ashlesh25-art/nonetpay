@@ -28,29 +28,16 @@ import {
   isVoucherExpired,
 } from "../../lib/api";
 import TransactionDetailModal from "../../components/TransactionDetailModal";
-
-type Transaction = {
-  id: string;
-  type: "credit" | "debit";
-  category: string;
-  amount: number;
-  description: string;
-  timestamp: string;
-  status?: string;
-  balance?: number;
-  payerName?: string;
-  merchantId?: string;
-  voucherData?: GeneratedVoucher;
-};
+import type { UserTransaction } from "../../types";
 
 export default function UserHistoryScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"transactions" | "vouchers">("transactions");
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [transactions, setTransactions] = useState<UserTransaction[]>([]);
   const [vouchers, setVouchers] = useState<GeneratedVoucher[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [selectedTransaction, setSelectedTransaction] = useState<UserTransaction | null>(null);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [expandedVoucher, setExpandedVoucher] = useState<string | null>(null);
   const [pdfLoadingVoucher, setPdfLoadingVoucher] = useState<string | null>(null);
@@ -87,31 +74,36 @@ export default function UserHistoryScreen() {
       // "synced" transactions are already returned by the backend — including them
       // here too would create duplicates. "failed" ones are shown separately below.
       const offlineTxns = await getOfflineTransactions();
-      const localTxns: Transaction[] = offlineTxns
-        .filter((t) => t.status === "pending") // synced & failed excluded
+      const localTxns: UserTransaction[] = offlineTxns
+        .filter((t) => t.status !== "synced")
         .map((t) => ({
         id: t.voucherId,
         type: "debit" as const,
         category: "payment",
         amount: t.amount,
-        description: `Paid to ${t.merchantId}`,
+        description: `Paid to ${t.merchantName || t.merchantId}`,
         merchantId: t.merchantId,
+        merchantName: t.merchantName,
         timestamp: t.timestamp,
-        status: t.status === "synced" ? "synced" : "pending",
+        status: t.status,
+        failureReason: t.failureReason,
         voucherData: voucherMap.get(t.voucherId),
+        voucherId: t.voucherId,
+        source: "local",
       }));
 
       // ── Load from backend ──────────────────────────────────────────────────
-      let backendTxns: Transaction[] = [];
+      let backendTxns: UserTransaction[] = [];
       try {
         const response = await fetch(`${API_BASE_URL}/api/transactions/user`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (response.ok) {
           const data = await response.json();
-          backendTxns = (data.transactions || []).map((t: Transaction) => ({
+          backendTxns = (data.transactions || []).map((t: UserTransaction) => ({
             ...t,
             voucherData: voucherMap.get(t.id),
+            source: "server",
           }));
         }
       } catch {
@@ -173,7 +165,7 @@ export default function UserHistoryScreen() {
     }
   };
 
-  const handleTransactionPress = (transaction: Transaction) => {
+  const handleTransactionPress = (transaction: UserTransaction) => {
     setSelectedTransaction(transaction);
     setDetailModalVisible(true);
   };
@@ -275,8 +267,9 @@ export default function UserHistoryScreen() {
     });
 
   // ── Transaction row ──────────────────────────────────────────────────────
-  const renderTransaction = ({ item }: { item: Transaction }) => {
+  const renderTransaction = ({ item }: { item: UserTransaction }) => {
     const isRefund = (item as any).category === 'voucher_refund';
+    const isFailed = item.status === "failed";
     return (
       <Pressable
         style={({ pressed }) => [
@@ -309,12 +302,15 @@ export default function UserHistoryScreen() {
               <Text
                 style={[
                   styles.status,
+                  isFailed ? styles.statusFailed :
                   item.status === "synced" && item.voucherData?.used ? styles.statusSynced
                   : item.status === "synced" ? styles.statusBacked
                   : styles.statusPending,
                 ]}
               >
-                {item.status === "synced" && item.voucherData?.used
+                {isFailed
+                  ? `❌ ${item.failureReason || "Could not verify payment"}`
+                  : item.status === "synced" && item.voucherData?.used
                   ? "✅ Payment Confirmed"
                   : item.status === "synced"
                   ? "💾 Backed up — show QR to merchant"
@@ -804,6 +800,7 @@ const styles = StyleSheet.create({
   statusSynced: { color: "#16a34a" },
   statusBacked: { color: "#2563eb" },
   statusPending: { color: "#f59e0b" },
+  statusFailed: { color: "#dc2626" },
   transactionAmount: { fontSize: 16, fontWeight: "700" },
   tapHint: { fontSize: 11, color: "#9ca3af", marginTop: 2 },
   creditAmount: { color: "#16a34a" },

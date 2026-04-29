@@ -1,4 +1,4 @@
-﻿import express from "express";
+import express from "express";
 import Razorpay from "razorpay";
 import crypto from "crypto";
 import { getDB } from "../db/index.js";
@@ -19,7 +19,7 @@ const razorpay = new Razorpay({
 // ─────────────────────────────────────────────────────────────────────────────
 router.post("/payment/create-order", authMiddleware, async (req, res) => {
 	try {
-		const { amount } = req.body || {};
+		const { amount, returnUrl } = req.body || {};
 
 		if (!amount || typeof amount !== "number" || amount <= 0) {
 			return res.status(400).json({ error: "Invalid amount" });
@@ -40,13 +40,17 @@ router.post("/payment/create-order", authMiddleware, async (req, res) => {
 
 		// Build the checkout URL — BACKEND_HOST must be full URL (e.g. https://xxx.trycloudflare.com)
 		const backendBase = process.env.BACKEND_HOST || "https://explore-criterion-logging-floppy.trycloudflare.com";
+		const safeReturnUrl =
+			typeof returnUrl === "string" && returnUrl.trim().length > 0
+				? encodeURIComponent(returnUrl.trim())
+				: "";
 		return res.json({
 			success: true,
 			orderId: order.id,
 			amount: order.amount,
 			currency: order.currency,
 			keyId: process.env.RAZORPAY_KEY_ID,
-			checkoutUrl: `${backendBase}/api/payment/checkout/${order.id}?keyId=${process.env.RAZORPAY_KEY_ID}&amount=${order.amount}&userId=${req.user.userId}&name=${encodeURIComponent("NONETPAY Wallet")}`,
+			checkoutUrl: `${backendBase}/api/payment/checkout/${order.id}?keyId=${process.env.RAZORPAY_KEY_ID}&amount=${order.amount}&userId=${req.user.userId}&name=${encodeURIComponent("NONETPAY Wallet")}&returnUrl=${safeReturnUrl}`,
 		});
 	} catch (error) {
 		console.error("Create order error:", error);
@@ -61,7 +65,7 @@ router.post("/payment/create-order", authMiddleware, async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 router.get("/payment/checkout/:orderId", (req, res) => {
 	const { orderId } = req.params;
-	const { keyId, amount, userId, name } = req.query;
+	const { keyId, amount, userId, name, returnUrl } = req.query;
 	const backendBase = process.env.BACKEND_HOST || "https://explore-criterion-logging-floppy.trycloudflare.com";
 
 	res.send(`<!DOCTYPE html>
@@ -101,6 +105,17 @@ router.get("/payment/checkout/:orderId", (req, res) => {
 
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <script>
+    const returnUrl = ${JSON.stringify(typeof returnUrl === "string" ? returnUrl : "")};
+
+    function redirectToApp(status, balance) {
+      if (!returnUrl) return;
+      const sep = returnUrl.includes('?') ? '&' : '?';
+      const next = returnUrl + sep + 'status=' + encodeURIComponent(status) +
+        '&amount=' + encodeURIComponent(String(${Math.round(Number(amount) / 100)})) +
+        (typeof balance === 'number' ? '&balance=' + encodeURIComponent(String(balance)) : '');
+      window.location.href = next;
+    }
+
     function openPayment() {
       document.getElementById('payBtn').disabled = true;
       document.getElementById('payBtn').textContent = 'Opening...';
@@ -130,7 +145,10 @@ router.get("/payment/checkout/:orderId", (req, res) => {
           .then(data => {
             if(data.success) {
               showStatus('✅ ₹${Math.round(Number(amount) / 100)} added to wallet!', true);
-              setTimeout(() => window.close(), 2500);
+              setTimeout(() => {
+                redirectToApp('success', data.balance);
+                window.close();
+              }, 900);
             } else {
               showStatus('❌ Verification failed: ' + (data.error || 'Unknown error'), false);
             }
@@ -141,6 +159,7 @@ router.get("/payment/checkout/:orderId", (req, res) => {
         theme: { color: '#6c63ff' },
         modal: {
           ondismiss: function() {
+            redirectToApp('cancel');
             document.getElementById('payBtn').disabled = false;
             document.getElementById('payBtn').textContent = 'Pay with Razorpay';
           }

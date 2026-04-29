@@ -22,6 +22,8 @@ import { API_BASE_URL, saveLocalBalance, getLocalBalance, syncOfflineTransaction
 import { ensureUserKeypairAndId } from "../../lib/cryptoKeys";
 import { registerPublicKeyIfNeeded } from "../../lib/registerKey";
 import { initiateTopUp } from "../../lib/razorpay";
+import { OfflineBanner } from "../../components/OfflineBanner";
+import { useOfflineSync } from "../../hooks/useOfflineSync";
 
 const MAX_SINGLE_AMOUNT = 1000;   // per transaction
 const MAX_WALLET_BALANCE = 5000;  // total wallet cap
@@ -104,6 +106,9 @@ export default function UserWalletScreen() {
   const [recentTxns, setRecentTxns] = useState<Transaction[]>([]);
   const [userName, setUserName] = useState("User");
   const [isOffline, setIsOffline] = useState(false);
+
+  // M9: offline sync hook — auto-runs on focus, tracks pending queue
+  const { pendingCount } = useOfflineSync();
 
   useEffect(() => {
     (async () => {
@@ -270,6 +275,13 @@ export default function UserWalletScreen() {
     <SafeAreaView style={styles.root}>
       <StatusBar barStyle="dark-content" />
       <LinearGradient colors={["#f7f3ff", "#f8f6ff", "#f7f5ff"]} style={styles.background} />
+
+      {/* M9: Offline banner — slides in when device loses connectivity */}
+      <OfflineBanner
+        visible={isOffline}
+        onRetry={loadBalance}
+        message={pendingCount > 0 ? `Offline — ${pendingCount} payment(s) queued` : "Offline — showing cached balance"}
+      />
       <View style={styles.glowTop} />
       <View style={styles.glowRight} />
       <View style={styles.glowBottom} />
@@ -286,11 +298,7 @@ export default function UserWalletScreen() {
         }
       >
         <View style={styles.headerRow}>
-          <Pressable style={styles.menuButton}>
-            <View style={styles.menuBar} />
-            <View style={[styles.menuBar, styles.menuBarMid]} />
-            <View style={styles.menuBar} />
-          </Pressable>
+          <View />
           <Pressable style={styles.avatarBtn} onPress={() => router.push("/user/profile") }>
             <Text style={styles.avatarText}>{firstLetter}</Text>
           </Pressable>
@@ -494,26 +502,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginTop: 6,
-  },
-  menuButton: {
-    paddingVertical: 6,
-    paddingRight: 8,
-  },
-  menuBar: {
-    width: 22,
-    height: 2,
-    borderRadius: 2,
-    backgroundColor: "#1f2433",
-    marginVertical: 2,
-  },
-  menuBarMid: {
-    width: 18,
+    marginTop: 2,
   },
   avatarBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: "#7d6bff",
     alignItems: "center",
     justifyContent: "center",
@@ -529,8 +523,8 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   greetingBlock: {
-    marginTop: 12,
-    marginBottom: 16,
+    marginTop: 8,
+    marginBottom: 14,
   },
   greeting: {
     fontSize: 14,
@@ -538,10 +532,10 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   userName: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: "800",
     color: "#1f2433",
-    marginTop: 4,
+    marginTop: 2,
   },
   balanceCard: {
     backgroundColor: "rgba(255,255,255,0.9)",

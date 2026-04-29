@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+﻿import React, { useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -47,7 +47,7 @@ export default function UserSupportScreen() {
       id: "welcome",
       role: "assistant",
       text:
-        "Hi, I am your Offline Pay assistant. Ask me about rejected payments, offline vouchers, sync delays, or wallet differences and I will use your app context to answer.",
+        "Hi, I am your NONETPAY assistant. Ask me about rejected payments, offline vouchers, sync delays, or wallet differences and I will use your app context to answer.",
       meta: null,
     },
   ]);
@@ -105,7 +105,8 @@ export default function UserSupportScreen() {
 
       <KeyboardAvoidingView
         style={styles.keyboardWrap}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 8 : 24}
       >
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} style={styles.backBtn}>
@@ -122,6 +123,7 @@ export default function UserSupportScreen() {
           ref={scrollRef}
           contentContainerStyle={styles.scroll}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
           <View style={styles.heroCard}>
             <Text style={styles.heroEyebrow}>AI ASSISTED</Text>
@@ -425,7 +427,7 @@ const styles = StyleSheet.create({
     gap: 10,
     marginHorizontal: 16,
     marginTop: 8,
-    marginBottom: 16,
+    marginBottom: Platform.OS === "ios" ? 16 : 8,
     padding: 12,
     backgroundColor: "rgba(255,255,255,0.97)",
     borderRadius: 22,

@@ -17,6 +17,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { getUserId, signPayloadHex, ensureUserKeypairAndId, getPublicKeyHex } from "../../lib/cryptoKeys";
 import { API_BASE_URL, saveLocalBalance, getLocalBalance, deductLocalBalance, queueOfflineTransaction, saveGeneratedVoucher, getGeneratedVouchers, syncOfflineTransactions, GeneratedVoucher, VOUCHER_EXPIRY_DAYS, isVoucherExpired, refundExpiredVouchers } from "../../lib/api";
+import { OfflineBanner } from "../../components/OfflineBanner";
 
 type MerchantInfo = {
   merchantId: string;
@@ -286,6 +287,14 @@ export default function UserPayScreen() {
     <SafeAreaView style={styles.root}>
       <StatusBar barStyle="dark-content" />
       <LinearGradient colors={['#f7f3ff', '#f9f7ff', '#f3f1ff']} style={styles.background} />
+
+      {/* M9: Offline banner */}
+      <OfflineBanner
+        visible={isOffline}
+        onRetry={loadBalance}
+        message="Offline — payments will sync when connected"
+      />
+
       <View style={styles.glowTop} />
       <View style={styles.glowRight} />
       <View style={styles.glowBottom} />

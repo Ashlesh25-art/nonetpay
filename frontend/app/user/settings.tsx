@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -19,6 +19,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { API_BASE_URL } from "../../lib/api";
+import * as Updates from "expo-updates";
 
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -57,6 +58,8 @@ const FAQ_ITEMS = [
 
 export default function UserSettingsScreen() {
   const router = useRouter();
+  const appVersion =
+    ((Updates.manifest as { version?: string } | null)?.version ?? "1.0.1");
 
   // ─── Profile state ────────────────────────────────────────────────
   const [name, setName] = useState("");
@@ -78,6 +81,10 @@ export default function UserSettingsScreen() {
 
   // ─── FAQ state ────────────────────────────────────────────────────
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  // ─── OTA Update state ─────────────────────────────────────────
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+  const [updateStatus, setUpdateStatus] = useState<"idle" | "available" | "uptodate" | "error">("idle");
 
   const [loading, setLoading] = useState(true);
 
@@ -171,6 +178,45 @@ export default function UserSettingsScreen() {
   const toggleFaq = (index: number) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setOpenFaq(openFaq === index ? null : index);
+  };
+
+  // ─── OTA Update check ─────────────────────────────────────────
+  const handleCheckUpdate = async () => {
+    try {
+      setCheckingUpdate(true);
+      setUpdateStatus("idle");
+      const update = await Updates.checkForUpdateAsync();
+      if (update.isAvailable) {
+        setUpdateStatus("available");
+        Alert.alert(
+          "🎉 Update Available!",
+          "A new version of NONETPAY is ready. The app will restart to apply it.",
+          [
+            { text: "Later", style: "cancel" },
+            {
+              text: "Install Now",
+              onPress: async () => {
+                await Updates.fetchUpdateAsync();
+                await Updates.reloadAsync();
+              },
+            },
+          ]
+        );
+      } else {
+        setUpdateStatus("uptodate");
+        setTimeout(() => setUpdateStatus("idle"), 3000);
+      }
+    } catch {
+      // expo-updates not available in dev/tunnel mode
+      setUpdateStatus("error");
+      Alert.alert(
+        "Dev Mode",
+        "OTA updates are only available in production APK builds. This is normal during development."
+      );
+      setTimeout(() => setUpdateStatus("idle"), 3000);
+    } finally {
+      setCheckingUpdate(false);
+    }
   };
 
   if (loading) {
@@ -369,7 +415,7 @@ export default function UserSettingsScreen() {
         <SectionHeader label="HELP & SUPPORT" icon="💬" />
         <View style={styles.card}>
           {FAQ_ITEMS.map((item, i) => (
-            <View key={i}>
+            <View key={item.q}>
               {i > 0 && <View style={styles.divider} />}
               <Pressable style={styles.faqQuestion} onPress={() => toggleFaq(i)}>
                 <Text style={styles.faqQ}>{item.q}</Text>
@@ -390,25 +436,60 @@ export default function UserSettingsScreen() {
               <Text style={{ fontSize: 20 }}>👨‍💻</Text>
             </View>
             <View style={styles.contactInfo}>
-              <Text style={styles.contactName}>S Ashlesh</Text>
+              <Text style={styles.contactName}>Quantrix</Text>
               <Text style={styles.contactRole}>Developer & Support</Text>
             </View>
           </View>
           <Pressable
             style={styles.emailBtn}
-            onPress={() => Linking.openURL("mailto:ashleshskumar12@gmail.com?subject=Offline%20Pay%20Support")}
+            onPress={() => Linking.openURL("mailto:ashleshskumar12@gmail.com?subject=NONETPAY%20Support")}
           >
-            <Text style={styles.emailBtnIcon}>✉️</Text>
+            <Text style={styles.emailBtnIcon}>📩</Text>
             <Text style={styles.emailBtnText}>ashleshskumar12@gmail.com</Text>
           </Pressable>
           <Text style={styles.supportNote}>
-            Typically responds within 24 hours. Please include your User ID for faster assistance.
+            Typical response within 24 hours. Share your User ID for faster help.
           </Text>
         </View>
 
-        {/* ══ APP INFO ═════════════════════════════════════════════= */}
+        {/* ══ APP UPDATE ═════════════════════════════════════════════ */}
+        <SectionHeader label="APP UPDATE" icon="🚀" />
+        <View style={styles.card}>
+          <View style={styles.updateRow}>
+            <View style={styles.updateLeft}>
+              <View style={[styles.actionIcon, { backgroundColor: "#ede9fe" }]}>
+                <Text>🚀</Text>
+              </View>
+              <View>
+                <Text style={styles.actionTitle}>NONETPAY v{appVersion}</Text>
+                <Text style={styles.actionSub}>
+                  {updateStatus === "available"
+                    ? "Update available"
+                    : updateStatus === "uptodate"
+                    ? "You are on the latest version"
+                    : updateStatus === "error"
+                    ? "Dev mode - OTA unavailable"
+                    : "Tap to check for updates"}
+                </Text>
+              </View>
+            </View>
+            <Pressable
+              style={[styles.updateBtn, checkingUpdate && styles.btnDisabled]}
+              onPress={handleCheckUpdate}
+              disabled={checkingUpdate}
+            >
+              {checkingUpdate ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={styles.updateBtnText}>Check</Text>
+              )}
+            </Pressable>
+          </View>
+        </View>
+
+        {/* ══ APP INFO ═══════════════════════════════════════════════ */}
         <View style={styles.appInfo}>
-          <Text style={styles.appInfoText}>Offline Pay · v1.0.0</Text>
+          <Text style={styles.appInfoText}>NONETPAY · User · v{appVersion}</Text>
           <Text style={styles.appInfoText}>Secure · Fast · Works Offline</Text>
         </View>
 
@@ -417,8 +498,6 @@ export default function UserSettingsScreen() {
     </SafeAreaView>
   );
 }
-
-// ─── Helper components ────────────────────────────────────────────────────────
 
 function SectionHeader({ label, icon }: { label: string; icon: string }) {
   return (
@@ -709,4 +788,29 @@ const styles = StyleSheet.create({
   // App info
   appInfo: { alignItems: "center", marginTop: 8, marginBottom: 4 },
   appInfoText: { color: "#9b9fb4", fontSize: 12, marginBottom: 2 },
+
+  // OTA Update row
+  updateRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  updateLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  updateBtn: {
+    backgroundColor: "#6f63ff",
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: 10,
+    minWidth: 60,
+    alignItems: "center",
+  },
+  updateBtnText: {
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: "700",
+  },
 });

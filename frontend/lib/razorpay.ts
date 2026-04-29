@@ -28,6 +28,24 @@ export type PaymentResult = {
   error?: string;
 };
 
+function normalizeCheckoutUrl(checkoutUrl: string): string {
+  try {
+    const checkout = new URL(checkoutUrl);
+    const apiBase = new URL(API_BASE_URL);
+
+    // Safety fallback: if backend returns a stale tunnel domain,
+    // force checkout route to open on the current API host.
+    if (checkout.pathname.startsWith("/api/payment/checkout/")) {
+      checkout.protocol = apiBase.protocol;
+      checkout.host = apiBase.host;
+    }
+
+    return checkout.toString();
+  } catch {
+    return checkoutUrl;
+  }
+}
+
 /**
  * Step 1: Create a Razorpay order on the backend.
  * Returns the checkout URL to open in browser.
@@ -66,7 +84,8 @@ export async function createTopUpOrder(
 export async function openRazorpayCheckout(checkoutUrl: string): Promise<PaymentResult> {
   try {
     const returnUrl = Linking.createURL("payment-callback");
-    const result = await WebBrowser.openAuthSessionAsync(checkoutUrl, returnUrl);
+    const safeCheckoutUrl = normalizeCheckoutUrl(checkoutUrl);
+    const result = await WebBrowser.openAuthSessionAsync(safeCheckoutUrl, returnUrl);
     if (result.type !== "success" || !result.url) {
       return { opened: true, error: "Payment cancelled" };
     }

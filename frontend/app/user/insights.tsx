@@ -3,16 +3,15 @@ import {
   ActivityIndicator,
   Pressable,
   RefreshControl,
-  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { fetchSpendingInsights } from "../../lib/ai";
 import type { SpendingAnalytics, SpendingCategory } from "../../types";
 
@@ -82,7 +81,7 @@ export default function UserInsightsScreen() {
       <View style={styles.glowRight} />
       <View style={styles.glowBottom} />
 
-      <View style={[styles.header, { paddingTop: insets.top + 4 }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
           <Text style={styles.backArrow}>←</Text>
         </Pressable>

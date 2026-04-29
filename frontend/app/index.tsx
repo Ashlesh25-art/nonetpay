@@ -1,10 +1,21 @@
-﻿import React from "react";
-import { View, Text, Pressable, StyleSheet, SafeAreaView, StatusBar } from "react-native";
+import React from "react";
+import { View, Text, Pressable, StyleSheet, StatusBar, Linking } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 
+const APP_BUILD_URL = "https://expo.dev/accounts/mujju-212/projects/offline-pay/builds/d4fee352-301d-4602-9ba1-6ee39083bfa8";
+const REPO_URL = "https://github.com/mujju-212/nonetpay";
+
 export default function RoleSelectScreen() {
+  const openExternalLink = async (url: string) => {
+    const supported = await Linking.canOpenURL(url);
+    if (supported) {
+      await Linking.openURL(url);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.root}>
       <StatusBar barStyle="dark-content" />
@@ -69,6 +80,18 @@ export default function RoleSelectScreen() {
             <Ionicons name="build-outline" size={14} color="#6357d9" />
             <Text style={styles.testText}>Connection Test</Text>
           </Pressable>
+
+          <View style={styles.externalLinksSection}>
+            <Text style={styles.externalLinksTitle}>Project Links</Text>
+            <Pressable style={styles.externalLinkButton} onPress={() => openExternalLink(APP_BUILD_URL)}>
+              <Ionicons name="phone-portrait-outline" size={14} color="#4f46a5" />
+              <Text style={styles.externalLinkText}>Open Latest Expo Build</Text>
+            </Pressable>
+            <Pressable style={styles.externalLinkButton} onPress={() => openExternalLink(REPO_URL)}>
+              <Ionicons name="logo-github" size={14} color="#4f46a5" />
+              <Text style={styles.externalLinkText}>Open GitHub Repository</Text>
+            </Pressable>
+          </View>
         </View>
       </View>
     </SafeAreaView>
@@ -258,6 +281,32 @@ const styles = StyleSheet.create({
   testText: {
     fontSize: 12,
     color: "#6357d9",
+    fontWeight: "700",
+  },
+  externalLinksSection: {
+    marginTop: 8,
+    gap: 8,
+  },
+  externalLinksTitle: {
+    fontSize: 12,
+    color: "#7a8096",
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  externalLinkButton: {
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.95)",
+    borderWidth: 1,
+    borderColor: "#ebe7ff",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+  },
+  externalLinkText: {
+    fontSize: 12,
+    color: "#4f46a5",
     fontWeight: "700",
   },
 });

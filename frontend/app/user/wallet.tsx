@@ -289,7 +289,7 @@ export default function UserWalletScreen() {
       <View style={styles.glowBottom} />
 
       <ScrollView
-        contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 8 }]}
+        contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 18 }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl

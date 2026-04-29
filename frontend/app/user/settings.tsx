@@ -13,12 +13,11 @@ import {
   LayoutAnimation,
   Platform,
   UIManager,
-  SafeAreaView,
 } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { API_BASE_URL } from "../../lib/api";
 import * as Updates from "expo-updates";
 
@@ -247,7 +246,7 @@ export default function UserSettingsScreen() {
       <View style={styles.glowBottom} />
 
       {/* ── HEADER ── */}
-      <View style={[styles.header, { paddingTop: insets.top + 4 }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <Pressable onPress={() => router.back()} hitSlop={8}
           style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.6 }]}>
           <Text style={styles.backArrow}>←</Text>

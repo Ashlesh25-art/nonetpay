@@ -153,7 +153,7 @@ export default function ProfileScreen() {
       <View style={styles.glowBottom} />
 
       {/* ── HEADER ── */}
-      <View style={[styles.header, { paddingTop: insets.top + 4 }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <Pressable
           onPress={() => router.back()}
           style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed]}

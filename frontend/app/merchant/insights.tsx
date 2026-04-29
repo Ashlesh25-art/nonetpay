@@ -3,13 +3,13 @@ import {
   ActivityIndicator,
   Pressable,
   RefreshControl,
-  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { fetchMerchantInsights } from "../../lib/ai";
@@ -32,6 +32,7 @@ function getChangeTone(value: number | null) {
 
 export default function MerchantInsightsScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [analytics, setAnalytics] = useState<MerchantInsights | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -78,7 +79,7 @@ export default function MerchantInsightsScreen() {
       <View style={styles.glowRight} />
       <View style={styles.glowBottom} />
 
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
           <Text style={styles.backArrow}>←</Text>
         </Pressable>

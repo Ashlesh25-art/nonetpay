@@ -1,4 +1,4 @@
-﻿import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   View,
   Text,
@@ -21,6 +21,7 @@ export default function MerchantHomeScreen() {
   const [merchantId, setMerchantId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [pendingCount, setPendingCount] = useState(0);
+  const [verifiedCount, setVerifiedCount] = useState(0);
   const [totalEarned, setTotalEarned] = useState(0);
   const [loggingOut, setLoggingOut] = useState(false);
 
@@ -29,7 +30,7 @@ export default function MerchantHomeScreen() {
     if (!loggingOut) return;
     AsyncStorage.multiRemove(["@auth_token", "@merchant_data", "@merchant_id", "@offline_vouchers"])
       .then(() => router.replace("/merchant-login"));
-  }, [loggingOut]);
+  }, [loggingOut, router]);
 
   const loadMerchantData = useCallback(async () => {
     try {
@@ -43,9 +44,15 @@ export default function MerchantHomeScreen() {
       if (existing) {
         const vouchers = JSON.parse(existing);
         const pending = vouchers.filter((v: any) => v.status === "offline").length;
+        const synced = vouchers.filter((v: any) => v.status === "synced").length;
         const total = vouchers.reduce((s: number, v: any) => s + v.amount, 0);
         setPendingCount(pending);
+        setVerifiedCount(synced);
         setTotalEarned(total);
+      } else {
+        setPendingCount(0);
+        setVerifiedCount(0);
+        setTotalEarned(0);
       }
     } catch (error) {
       console.log("Error loading merchant data:", error);
@@ -107,7 +114,7 @@ export default function MerchantHomeScreen() {
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>—</Text>
+            <Text style={styles.statValue}>{verifiedCount}</Text>
             <Text style={styles.statLabel}>Verified</Text>
           </View>
         </View>
@@ -164,6 +171,24 @@ export default function MerchantHomeScreen() {
             <Ionicons name="receipt-outline" size={28} color="#7c3aed" style={styles.actionIcon} />
             <Text style={styles.actionTitle}>Transaction History</Text>
             <Text style={styles.actionSub}>View sales & sync to server</Text>
+          </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [styles.actionCard, pressed && styles.cardPressed]}
+            onPress={() => router.push("/merchant/insights")}
+          >
+            <Ionicons name="sparkles-outline" size={28} color="#0f766e" style={styles.actionIcon} />
+            <Text style={styles.actionTitle}>AI Insights</Text>
+            <Text style={styles.actionSub}>Weekly collection analytics</Text>
+          </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [styles.actionCard, pressed && styles.cardPressed]}
+            onPress={() => router.push("/merchant/support")}
+          >
+            <Ionicons name="chatbubbles-outline" size={28} color="#0ea5e9" style={styles.actionIcon} />
+            <Text style={styles.actionTitle}>AI Support</Text>
+            <Text style={styles.actionSub}>Fix failed and pending vouchers</Text>
           </Pressable>
         </View>
 
@@ -273,9 +298,9 @@ const styles = StyleSheet.create({
   syncNowBtnText: { color: "#fff", fontSize: 14, fontWeight: "700" },
 
   sectionHeading: { fontSize: 16, fontWeight: "700", color: "#1f2937", marginBottom: 12 },
-  actionsGrid: { flexDirection: "row", gap: 12, marginBottom: 18 },
+  actionsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginBottom: 18 },
   actionCard: {
-    flex: 1, 
+    width: "48%",
     backgroundColor: "#fff", 
     borderRadius: 16, 
     padding: 18,

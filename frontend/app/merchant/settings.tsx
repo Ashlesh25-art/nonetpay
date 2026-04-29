@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -19,6 +19,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { API_BASE_URL } from "../../lib/api";
 import { Ionicons } from "@expo/vector-icons";
+import * as Updates from "expo-updates";
 
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -57,6 +58,8 @@ const FAQ_ITEMS = [
 
 export default function MerchantSettingsScreen() {
   const router = useRouter();
+  const appVersion =
+    ((Updates.manifest as { version?: string } | null)?.version ?? "1.0.1");
 
   // ─── Profile state ─────────────────────────────────────────────
   const [name, setName] = useState("");
@@ -84,6 +87,10 @@ export default function MerchantSettingsScreen() {
   // ─── FAQ state ─────────────────────────────────────────────────
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // ─── OTA Update state ─────────────────────────────────
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+  const [updateStatus, setUpdateStatus] = useState<"idle" | "available" | "uptodate" | "error">("idle");
 
   useEffect(() => {
     (async () => {
@@ -187,6 +194,41 @@ export default function MerchantSettingsScreen() {
   const toggleFaq = (i: number) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setOpenFaq(openFaq === i ? null : i);
+  };
+
+  // ─── OTA Update check ─────────────────────────────────
+  const handleCheckUpdate = async () => {
+    try {
+      setCheckingUpdate(true);
+      setUpdateStatus("idle");
+      const update = await Updates.checkForUpdateAsync();
+      if (update.isAvailable) {
+        setUpdateStatus("available");
+        Alert.alert(
+          "🎉 Update Available!",
+          "A new version is ready. The app will restart to apply it.",
+          [
+            { text: "Later", style: "cancel" },
+            {
+              text: "Install Now",
+              onPress: async () => {
+                await Updates.fetchUpdateAsync();
+                await Updates.reloadAsync();
+              },
+            },
+          ]
+        );
+      } else {
+        setUpdateStatus("uptodate");
+        setTimeout(() => setUpdateStatus("idle"), 3000);
+      }
+    } catch {
+      setUpdateStatus("error");
+      Alert.alert("Dev Mode", "OTA updates are only available in production APK builds.");
+      setTimeout(() => setUpdateStatus("idle"), 3000);
+    } finally {
+      setCheckingUpdate(false);
+    }
   };
 
   if (loading) {
@@ -370,7 +412,7 @@ export default function MerchantSettingsScreen() {
         <SectionHeader label="HELP & SUPPORT" icon="chatbubble-ellipses-outline" />
         <View style={styles.card}>
           {FAQ_ITEMS.map((item, i) => (
-            <View key={i}>
+            <View key={item.q}>
               {i > 0 && <View style={styles.divider} />}
               <Pressable style={styles.faqQuestion} onPress={() => toggleFaq(i)}>
                 <Text style={styles.faqQ}>{item.q}</Text>
@@ -409,9 +451,39 @@ export default function MerchantSettingsScreen() {
           </Text>
         </View>
 
-        {/* ══ APP INFO ════════════════════════════════════════════= */}
+        {/* ══ APP UPDATE ═════════════════════════════════════════════ */}
+        <SectionHeader label="APP UPDATE" icon="cloud-download-outline" />
+        <View style={styles.card}>
+          <View style={styles.updateRow}>
+            <View style={styles.updateLeft}>
+              <View style={[styles.actionIcon, { backgroundColor: "#d1fae5" }]}>
+                <Ionicons name="rocket-outline" size={18} color="#065f46" />
+              </View>
+              <View>
+                <Text style={styles.actionTitle}>NONETPAY v{appVersion}</Text>
+                <Text style={styles.actionSub}>
+                  {updateStatus === "available" ? "✅ Update available!"
+                  : updateStatus === "uptodate" ? "✅ You're on the latest"
+                  : updateStatus === "error" ? "⚠️ Dev mode — no OTA check"
+                  : "Tap to check for updates"}
+                </Text>
+              </View>
+            </View>
+            <Pressable
+              style={[styles.updateBtn, checkingUpdate && styles.btnDisabled]}
+              onPress={handleCheckUpdate}
+              disabled={checkingUpdate}
+            >
+              {checkingUpdate
+                ? <ActivityIndicator size="small" color="#fff" />
+                : <Text style={styles.updateBtnText}>Check</Text>}
+            </Pressable>
+          </View>
+        </View>
+
+        {/* ══ APP INFO ═════════════════════════════════════════════= */}
         <View style={styles.appInfo}>
-          <Text style={styles.appInfoText}>NONETPAY · Merchant · v1.0.0</Text>
+          <Text style={styles.appInfoText}>NONETPAY · Merchant · v{appVersion}</Text>
           <Text style={styles.appInfoText}>Secure · Fast · Works Offline</Text>
         </View>
 
@@ -682,4 +754,18 @@ const styles = StyleSheet.create({
 
   appInfo: { alignItems: "center", marginTop: 8, marginBottom: 4 },
   appInfoText: { color: "rgba(255,255,255,0.5)", fontSize: 12, marginBottom: 2 },
+
+  // OTA Update row
+  updateRow: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+  },
+  updateLeft: {
+    flexDirection: "row", alignItems: "center", flex: 1,
+  },
+  updateBtn: {
+    backgroundColor: "#059669",
+    paddingHorizontal: 16, paddingVertical: 9,
+    borderRadius: 10, minWidth: 60, alignItems: "center",
+  },
+  updateBtnText: { color: "#fff", fontSize: 13, fontWeight: "700" },
 });

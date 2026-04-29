@@ -39,6 +39,7 @@ export default function MerchantHistoryScreen() {
   const [syncing, setSyncing] = useState(false);
   const [offlineCount, setOfflineCount] = useState(0);
   const [syncedCount, setSyncedCount] = useState(0);
+  const [backendReachable, setBackendReachable] = useState(true);
   const [selectedTab, setSelectedTab] = useState<"transactions" | "vouchers">("vouchers");
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
@@ -62,9 +63,12 @@ export default function MerchantHistoryScreen() {
           ...t,
           status: t.status || "synced",
         }));
+        setBackendReachable(true);
       }
     } catch (error) {
-      console.error("Backend load error:", error);
+      // Backend may be unreachable (offline/no tunnel). Continue with local vouchers.
+      setBackendReachable(false);
+      console.warn("Backend unavailable, showing local vouchers only:", error);
     }
 
     // Load offline vouchers
@@ -167,7 +171,7 @@ export default function MerchantHistoryScreen() {
       );
       loadTransactions();
     } catch (error) {
-      console.error("Sync error:", error);
+      console.warn("Sync error:", error);
       Alert.alert("Sync Failed", `Could not sync: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setSyncing(false);
@@ -270,6 +274,11 @@ export default function MerchantHistoryScreen() {
       </View>
 
       <View style={styles.syncContainer}>
+        {!backendReachable && (
+          <Text style={styles.offlineHint}>
+            Backend unreachable. Working in offline mode with local vouchers.
+          </Text>
+        )}
         <Pressable
           style={[
             styles.syncButton,
@@ -356,6 +365,13 @@ const styles = StyleSheet.create({
   badgeContainer: { paddingHorizontal: 20, marginBottom: 12 },
   badge: { fontSize: 12, color: "#1f2937", fontWeight: "600", paddingVertical: 6, paddingHorizontal: 10 },
   syncContainer: { paddingHorizontal: 20, marginBottom: 14 },
+  offlineHint: {
+    marginBottom: 8,
+    textAlign: "center",
+    fontSize: 12,
+    color: "#b45309",
+    fontWeight: "600",
+  },
   syncButton: {
     backgroundColor: "#2563eb",
     borderRadius: 12,

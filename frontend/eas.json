@@ -13,15 +13,14 @@
     },
     "preview": {
       "distribution": "internal",
-      "cache": {
-        "disabled": true
-      },
+      "channel": "preview",
       "android": {
         "buildType": "apk"
       }
     },
     "production": {
       "distribution": "store",
+      "channel": "production",
       "android": {
         "buildType": "app-bundle"
       }

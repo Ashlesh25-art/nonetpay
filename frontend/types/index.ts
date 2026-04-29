@@ -65,3 +65,32 @@ export type SpendingAnalytics = {
   narrative: string;
   savingTip: string;
 };
+
+export type MerchantStatusBreakdown = {
+  key: string;
+  label: string;
+  count: number;
+  amount: number;
+  share: number;
+};
+
+export type MerchantTopPayer = {
+  name: string;
+  amount: number;
+  count: number;
+};
+
+export type MerchantInsights = {
+  totalReceivedWeek: number;
+  totalReceivedLastWeek: number;
+  weekChangePct: number | null;
+  totalTransactionsWeek: number;
+  pendingCount: number;
+  pendingAmount: number;
+  failedCount: number;
+  failedAmount: number;
+  topPayer: MerchantTopPayer | null;
+  statusBreakdown: MerchantStatusBreakdown[];
+  actionTip: string;
+  narrative: string;
+};

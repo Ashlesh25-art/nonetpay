@@ -1,17 +1,13 @@
 {
   "expo": {
-    "name": "Offline Pay",
+    "name": "NONETPAY",
     "slug": "offline-pay",
     "version": "1.0.1",
     "orientation": "portrait",
     "scheme": "offlinepay",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/images/icon.png",
-    "platforms": [
-      "ios",
-      "android",
-      "web"
-    ],
+    "platforms": ["ios", "android", "web"],
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
@@ -20,6 +16,15 @@
     "web": {
       "bundler": "metro",
       "favicon": "./assets/images/favicon.png"
+    },
+    "updates": {
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/011c1998-23a4-4110-8332-7785c719ff27"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
     },
     "android": {
       "package": "com.ashlesh.offlinepay",
@@ -42,15 +47,15 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow Offline Pay to access your camera to scan QR codes."
+          "cameraPermission": "Allow NONETPAY to access your camera to scan QR codes."
         }
       ],
       "expo-secure-store",
       [
         "expo-media-library",
         {
-          "photosPermission": "Allow Offline Pay to save receipts to your Downloads folder.",
-          "savePhotosPermission": "Allow Offline Pay to save receipt PDFs.",
+          "photosPermission": "Allow NONETPAY to save receipts to your Downloads folder.",
+          "savePhotosPermission": "Allow NONETPAY to save receipt PDFs.",
           "isAccessMediaLocationEnabled": true
         }
       ],

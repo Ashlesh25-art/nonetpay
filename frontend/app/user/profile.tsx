@@ -9,8 +9,8 @@ import {
   Alert,
   ScrollView,
   StatusBar,
-  SafeAreaView,
 } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
@@ -18,6 +18,7 @@ import { API_BASE_URL } from "../../lib/api";
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState("");
@@ -152,7 +153,7 @@ export default function ProfileScreen() {
       <View style={styles.glowBottom} />
 
       {/* ── HEADER ── */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 4 }]}>
         <Pressable
           onPress={() => router.back()}
           style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed]}
@@ -356,7 +357,6 @@ const styles = StyleSheet.create({
 
   avatarCard: {
     borderRadius: 24,
-    overflow: "hidden",
     marginBottom: 16,
     backgroundColor: "rgba(255,255,255,0.95)",
     shadowColor: "#c6bff3",

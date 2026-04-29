@@ -3,9 +3,9 @@ import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -13,9 +13,10 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { fetchSupportReply } from "../../lib/ai";
+import { buildAiClientContext, fetchSupportReply } from "../../lib/ai";
 
 type ChatMessage = {
   id: string;
@@ -31,13 +32,18 @@ type ChatMessage = {
 
 const DEFAULT_PROMPTS = [
   "Why was my payment rejected?",
+  "Show my latest offline transactions",
+  "Give my weekly spending insights",
   "How do offline payments work?",
   "Why is my balance different offline?",
+  "How do I report an issue?",
   "What should I do next?",
 ];
+const SUPPORT_EMAIL = "ashleshskumar12@gmail.com";
 
 export default function UserSupportScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView | null>(null);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -58,6 +64,77 @@ export default function UserSupportScreen() {
     setTimeout(() => {
       scrollRef.current?.scrollToEnd({ animated: true });
     }, 60);
+  };
+
+  const reportIssueByEmail = async () => {
+    try {
+      const context = await buildAiClientContext();
+      const txns = (context.offlineTransactions || [])
+        .slice()
+        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      const recent = txns.slice(0, 5);
+      const pendingCount = txns.filter((transaction) => transaction.status === "pending").length;
+      const failedCount = txns.filter((transaction) => transaction.status === "failed").length;
+      const latestMeta =
+        [...messages].reverse().find((message) => message.role === "assistant" && message.meta)?.meta || null;
+      const chatSummary = messages
+        .slice(-6)
+        .map((message) => `${message.role === "user" ? "User" : "Assistant"}: ${message.text}`)
+        .join("\n");
+
+      const lines = [
+        "Hello NONETPAY Support Team,",
+        "",
+        "I want to report an issue from the user app.",
+        "",
+        `Cached wallet balance: Rs ${context.cachedBalance ?? "N/A"}`,
+        `Pending offline transactions: ${pendingCount}`,
+        `Failed offline transactions: ${failedCount}`,
+        "",
+        "Recent offline transactions:",
+        recent.length
+          ? recent
+              .map(
+                (transaction, index) =>
+                  `${index + 1}. ${transaction.voucherId} | Rs ${Number(transaction.amount) || 0} | ${
+                    transaction.merchantName || transaction.merchantId
+                  } | ${transaction.status} | ${transaction.timestamp}`
+              )
+              .join("\n")
+          : "No offline transactions found.",
+        "",
+      ];
+
+      if (latestMeta) {
+        lines.push(
+          "AI matched transaction:",
+          `Voucher: ${latestMeta.voucherId}`,
+          `Merchant: ${latestMeta.merchantName}`,
+          `Status: ${latestMeta.status}`,
+          latestMeta.failureReason ? `Failure reason: ${latestMeta.failureReason}` : "Failure reason: N/A",
+          ""
+        );
+      }
+
+      lines.push(
+        "Recent AI conversation:",
+        chatSummary || "No conversation available yet.",
+        "",
+        "Please check and help me resolve this issue.",
+        ""
+      );
+
+      const mailto = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(
+        "NONETPAY User Support Report"
+      )}&body=${encodeURIComponent(lines.join("\n"))}`;
+      const canOpen = await Linking.canOpenURL(mailto);
+      if (!canOpen) {
+        throw new Error("No email app is available on this device.");
+      }
+      await Linking.openURL(mailto);
+    } catch (error: any) {
+      Alert.alert("Report Failed", error?.message || "Could not open email app right now.");
+    }
   };
 
   const sendPrompt = async (messageText: string) => {
@@ -104,7 +181,7 @@ export default function UserSupportScreen() {
       <View style={styles.glowBottom} />
 
       <KeyboardAvoidingView
-        style={styles.keyboardWrap}
+        style={[styles.keyboardWrap, { paddingTop: insets.top }]}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={Platform.OS === "ios" ? 8 : 24}
       >
@@ -131,6 +208,9 @@ export default function UserSupportScreen() {
             <Text style={styles.heroBody}>
               The assistant checks your local offline queue and recent payment history before answering.
             </Text>
+            <Pressable style={styles.reportBtn} onPress={reportIssueByEmail}>
+              <Text style={styles.reportBtnText}>Report Issue to Support</Text>
+            </Pressable>
           </View>
 
           <Text style={styles.sectionTitle}>Try asking</Text>
@@ -261,8 +341,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 18,
-    paddingTop: 10,
-    paddingBottom: 16,
+    paddingTop: 4,
+    paddingBottom: 12,
   },
   backBtn: {
     width: 40,
@@ -312,6 +392,21 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: "#6b7280",
     fontWeight: "600",
+  },
+  reportBtn: {
+    marginTop: 14,
+    alignSelf: "flex-start",
+    backgroundColor: "#ece9ff",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#d8d0ff",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  reportBtnText: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#4f46e5",
   },
   sectionTitle: {
     marginTop: 18,

@@ -15,6 +15,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import QRCode from "react-native-qrcode-svg";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getUserId, signPayloadHex, ensureUserKeypairAndId, getPublicKeyHex } from "../../lib/cryptoKeys";
 import { API_BASE_URL, saveLocalBalance, getLocalBalance, deductLocalBalance, queueOfflineTransaction, saveGeneratedVoucher, getGeneratedVouchers, syncOfflineTransactions, GeneratedVoucher, VOUCHER_EXPIRY_DAYS, isVoucherExpired, refundExpiredVouchers } from "../../lib/api";
 import { OfflineBanner } from "../../components/OfflineBanner";
@@ -37,6 +38,7 @@ type Voucher = {
 
 export default function UserPayScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [permission, requestPermission] = useCameraPermissions();
   const [isScanning, setIsScanning] = useState(true);
   const [merchant, setMerchant] = useState<MerchantInfo>(null);
@@ -299,7 +301,7 @@ export default function UserPayScreen() {
       <View style={styles.glowRight} />
       <View style={styles.glowBottom} />
 
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 4 }]}>
         <Pressable style={styles.backButton} onPress={() => router.back()}>
           <Text style={styles.backButtonText}>←</Text>
         </Pressable>

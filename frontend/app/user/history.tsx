@@ -11,14 +11,9 @@ import {
   ScrollView,
   Share,
   Alert,
-  SafeAreaView,
 } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useRouter } from "expo-router";
-import QRCode from "react-native-qrcode-svg";
-import * as Print from "expo-print";
-import * as Sharing from "expo-sharing";
 import {
   API_BASE_URL,
   getOfflineTransactions,
@@ -32,6 +27,7 @@ import type { UserTransaction } from "../../types";
 
 export default function UserHistoryScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<"transactions" | "vouchers">("transactions");
   const [transactions, setTransactions] = useState<UserTransaction[]>([]);
   const [vouchers, setVouchers] = useState<GeneratedVoucher[]>([]);
@@ -492,7 +488,7 @@ export default function UserHistoryScreen() {
       <View style={styles.glowBottom} />
 
       {/* ── HEADER ── */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 4 }]}>
         <Pressable
           onPress={() => router.back()}
           style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed]}

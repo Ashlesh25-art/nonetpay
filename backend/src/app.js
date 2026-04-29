@@ -1,6 +1,11 @@
 import express from "express";
 import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
 import { errorHandler } from "./middleware/errorHandler.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
@@ -44,6 +49,15 @@ export async function registerRoutes() {
 	app.use("/api", paymentsRoutes);
 	app.use("/api", aiRoutes);
 	app.use("/", adminRoutes);
+
+	// ── Landing page & static assets ──────────────────────────────
+	const publicDir = path.join(__dirname, "../../public");
+	app.use(express.static(publicDir));
+
+	// Root → serve landing page
+	app.get("/", (_req, res) => {
+		res.sendFile(path.join(publicDir, "index.html"));
+	});
 
 	app.use(errorHandler);
 }

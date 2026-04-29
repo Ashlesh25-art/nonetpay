@@ -4,8 +4,11 @@ import type { AiClientContext, AiSupportResponse, MerchantInsights, SpendingAnal
 
 const DEFAULT_PROMPTS = [
   "Why was my payment rejected?",
+  "Show my latest offline transactions",
+  "Give my weekly spending insights",
   "How do offline payments work?",
   "Why is my balance different offline?",
+  "How do I report an issue?",
   "What should I do next?",
 ];
 
@@ -86,6 +89,10 @@ function buildFaqSupportReply(
 
   if (hasAny("lost phone", "uninstall", "reinstall", "new phone")) {
     return "Server balance is safe, but unsynced offline vouchers on old device may be lost. Always sync pending vouchers before uninstalling or changing phone.";
+  }
+
+  if (hasAny("report issue", "report", "complaint", "support email", "email support", "raise ticket")) {
+    return "Use the Report Issue button in AI Support. It opens your email app with recent transactions and chat context prefilled, so support can resolve faster.";
   }
 
   return null;
@@ -231,6 +238,68 @@ function buildSupportFallback(message: string, context: AiClientContext): AiSupp
     };
   }
 
+  if (
+    hasAny(
+      "insight",
+      "insights",
+      "analytics",
+      "spending",
+      "spend",
+      "week summary",
+      "weekly summary",
+      "summary"
+    )
+  ) {
+    const analytics = buildInsightsFallback(context);
+    return {
+      reply:
+        `${analytics.narrative} ` +
+        `Pending vouchers: ${analytics.pendingCount} (Rs ${analytics.pendingAmount}). ` +
+        `${analytics.savingTip}`,
+      suggestions: DEFAULT_PROMPTS,
+      usedAi: false,
+      matchedTransaction: null,
+    };
+  }
+
+  if (
+    hasAny(
+      "recent transaction",
+      "recent transactions",
+      "latest transaction",
+      "latest transactions",
+      "transaction history",
+      "payment history",
+      "show transaction"
+    )
+  ) {
+    const recent = transactions.slice(0, 3);
+    if (recent.length === 0) {
+      return {
+        reply: "No offline transactions found yet. Once you make payments, I can show recent voucher status and next actions.",
+        suggestions: DEFAULT_PROMPTS,
+        usedAi: false,
+        matchedTransaction: null,
+      };
+    }
+
+    const summary = recent
+      .map(
+        (transaction, index) =>
+          `${index + 1}) Rs ${normalizeAmount(transaction.amount)} to ${transaction.merchantName || transaction.merchantId} - ${
+            transaction.status
+          }`
+      )
+      .join("; ");
+
+    return {
+      reply: `Here are your latest offline transactions: ${summary}. Ask with amount or merchant name and I can drill down on one transaction.`,
+      suggestions: DEFAULT_PROMPTS,
+      usedAi: false,
+      matchedTransaction: null,
+    };
+  }
+
   if (matched) {
     return {
       reply:
@@ -251,8 +320,8 @@ function buildSupportFallback(message: string, context: AiClientContext): AiSupp
   if (hasAny("what can you do", "what can u do", "help", "capabilities", "how can you help")) {
     return {
       reply:
-        "I can help with failed payments, pending sync, voucher status, and offline wallet mismatch. " +
-        "Ask with amount (example: Rs 120) or merchant name for a precise answer.",
+        "I can help with failed payments, pending sync, voucher status, offline wallet mismatch, recent transactions, and weekly spending insights. " +
+        "Ask with amount (example: Rs 120) or merchant name for a precise answer, or use Report Issue to email support with context.",
       suggestions: DEFAULT_PROMPTS,
       usedAi: false,
       matchedTransaction: null,
@@ -262,7 +331,7 @@ function buildSupportFallback(message: string, context: AiClientContext): AiSupp
   if (text.length <= 3 || hasAny("ok", "okay", "hi", "hello", "hii")) {
     return {
       reply:
-        "I am ready to help. Ask one of these: why payment failed, how to sync pending vouchers, or why wallet balance is different.",
+        "I am ready to help. Ask why payment failed, show recent transactions, get spending insights, sync pending vouchers, or check wallet mismatch.",
       suggestions: DEFAULT_PROMPTS,
       usedAi: false,
       matchedTransaction: null,

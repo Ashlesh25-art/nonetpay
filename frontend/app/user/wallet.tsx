@@ -11,8 +11,8 @@ import {
   ScrollView,
   StatusBar,
   RefreshControl,
-  SafeAreaView,
 } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, type Href } from "expo-router";
@@ -96,6 +96,7 @@ type Transaction = {
 
 export default function UserWalletScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [balance, setBalance] = useState<number | null>(null);
   const [loadingBalance, setLoadingBalance] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -288,7 +289,7 @@ export default function UserWalletScreen() {
       <View style={styles.glowBottom} />
 
       <ScrollView
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 8 }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -497,13 +498,14 @@ const styles = StyleSheet.create({
   },
   scroll: {
     paddingHorizontal: 20,
+    paddingTop: 10,
     paddingBottom: 30,
   },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginTop: 2,
+    marginTop: 4,
   },
   avatarBtn: {
     width: 40,

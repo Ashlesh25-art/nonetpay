@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { fetchSpendingInsights } from "../../lib/ai";
 import type { SpendingAnalytics, SpendingCategory } from "../../types";
 
@@ -32,6 +33,7 @@ function getChangeTone(value: number | null) {
 
 export default function UserInsightsScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [analytics, setAnalytics] = useState<SpendingAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -80,7 +82,7 @@ export default function UserInsightsScreen() {
       <View style={styles.glowRight} />
       <View style={styles.glowBottom} />
 
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 4 }]}>
         <Pressable onPress={() => router.back()} style={styles.backBtn}>
           <Text style={styles.backArrow}>←</Text>
         </Pressable>

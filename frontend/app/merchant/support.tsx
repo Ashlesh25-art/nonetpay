@@ -5,7 +5,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -13,6 +12,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { fetchMerchantSupportReply } from "../../lib/ai";
@@ -38,6 +38,7 @@ const DEFAULT_PROMPTS = [
 
 export default function MerchantSupportScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView | null>(null);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -104,7 +105,7 @@ export default function MerchantSupportScreen() {
       <View style={styles.glowBottom} />
 
       <KeyboardAvoidingView
-        style={styles.keyboardWrap}
+        style={[styles.keyboardWrap, { paddingTop: insets.top }]}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={Platform.OS === "ios" ? 8 : 24}
       >
@@ -261,8 +262,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 18,
-    paddingTop: 10,
-    paddingBottom: 16,
+    paddingTop: 4,
+    paddingBottom: 12,
   },
   backBtn: {
     width: 40,

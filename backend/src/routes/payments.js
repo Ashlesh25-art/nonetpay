@@ -7,16 +7,20 @@ import { authMiddleware } from "../middleware/auth.js";
 const router = express.Router();
 
 function getBackendBase(req) {
+	const forwardedProto = (req.headers["x-forwarded-proto"] || "").toString().split(",")[0].trim();
+	const forwardedHost = (req.headers["x-forwarded-host"] || "").toString().split(",")[0].trim();
+	const host = forwardedHost || req.get("host") || "localhost:5000";
+	const proto = forwardedProto || (req.secure ? "https" : "http");
+	if (host) {
+		return `${proto}://${host}`;
+	}
+
 	const configured = (process.env.BACKEND_HOST || "").trim();
 	if (configured) {
 		return configured.replace(/\/+$/, "");
 	}
 
-	const forwardedProto = (req.headers["x-forwarded-proto"] || "").toString().split(",")[0].trim();
-	const forwardedHost = (req.headers["x-forwarded-host"] || "").toString().split(",")[0].trim();
-	const host = forwardedHost || req.get("host") || "localhost:5000";
-	const proto = forwardedProto || (req.secure ? "https" : "http");
-	return `${proto}://${host}`;
+	return "http://localhost:5000";
 }
 
 // ── Razorpay instance ──────────────────────────────────────────────────────────
@@ -143,7 +147,7 @@ router.get("/payment/checkout/:orderId", (req, res) => {
         handler: function(response) {
           // Payment success — send to backend verify endpoint
           showStatus('Verifying payment...', false);
-          fetch('${backendBase}/api/payment/verify-from-web', {
+          fetch('/api/payment/verify-from-web', {
             method: 'POST',
             headers: {'Content-Type':'application/json'},
             body: JSON.stringify({

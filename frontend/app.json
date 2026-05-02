@@ -25,7 +25,7 @@
       "enabled": true,
       "checkAutomatically": "ON_LOAD",
       "fallbackToCacheTimeout": 0,
-      "url": "https://u.expo.dev/011c1998-23a4-4110-8332-7785c719ff27"
+      "url": "https://u.expo.dev/04815925-e5d8-4003-b2ee-7b5fcbd00892"
     },
     "runtimeVersion": {
       "policy": "appVersion"
@@ -38,6 +38,21 @@
         "backgroundColor": "#1e3a8a"
       },
       "permissions": [
+        "CAMERA",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE",
+        "POST_NOTIFICATIONS",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
+        "android.permission.ACCESS_MEDIA_LOCATION",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.READ_MEDIA_AUDIO",
         "CAMERA",
         "RECEIVE_BOOT_COMPLETED",
         "VIBRATE",
@@ -90,6 +105,7 @@
         "projectId": "04815925-e5d8-4003-b2ee-7b5fcbd00892"
       }
     },
-    "owner": "mujju-212"
+    "owner": "mujju-212",
+    "ios": {}
   }
 }

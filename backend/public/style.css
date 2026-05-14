@@ -128,16 +128,22 @@ section{padding:80px 24px}
 /* ── APP IN ACTION ─────────────────────────── */
 .app-flow-bg{background:var(--bg2)}
 .app-phones-row{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;margin-bottom:48px}
-.app-phone-card{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:20px;transition:transform .3s ease,box-shadow .3s ease,border-color .3s;cursor:default;overflow:hidden;position:relative}
+.app-phone-card{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:16px;transition:transform .3s ease,box-shadow .3s ease,border-color .3s;cursor:default;overflow:hidden;position:relative}
 .app-phone-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,var(--accent-glow),transparent);opacity:0;transition:opacity .3s;pointer-events:none}
 .app-phone-card:hover{transform:translateY(-10px);box-shadow:0 24px 60px rgba(124,111,255,.18);border-color:rgba(124,111,255,.35)}
 .app-phone-card:hover::before{opacity:1}
 .app-phone-label{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);margin-bottom:14px;text-align:center}
 /* Phone frame inside card */
-.ap-frame{background:#0f0f1a;border-radius:28px;padding:10px 8px;position:relative;box-shadow:0 8px 32px rgba(0,0,0,.35);margin:0 auto;width:100%;max-width:160px}
+.ap-frame{background:#0f0f1a;border-radius:28px;padding:10px 8px;position:relative;box-shadow:0 8px 32px rgba(0,0,0,.35);margin:0 auto;width:100%;max-width:220px}
 .ap-notch{width:48px;height:4px;background:#333;border-radius:2px;margin:0 auto 8px}
-.ap-screen{border-radius:18px;overflow:hidden;background:#f7f5ff;min-height:230px;position:relative}
+.ap-screen{border-radius:18px;overflow:hidden;background:#f7f5ff;min-height:310px;position:relative}
 [data-theme="dark"] .ap-screen{background:#1a1730}
+.ap-screen-img{width:100%;height:100%;object-fit:cover;display:block;image-rendering:-webkit-optimize-contrast;backface-visibility:hidden;transform:translateZ(0)}
+
+.hero-shot{transition:transform .3s ease,box-shadow .3s ease;will-change:transform}
+.hero-shot:hover{transform:translateY(-10px)}
+.hero-shot:hover .ap-frame{box-shadow:0 24px 60px rgba(124,111,255,.18)}
+.hero-frame{max-width:280px}
 /* Screen 1 - User Dashboard */
 .ap-header{padding:8px 10px 6px;display:flex;justify-content:space-between;align-items:center}
 .ap-greeting{font-size:.58rem;color:var(--text3);font-weight:500}
